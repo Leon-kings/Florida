@@ -41,10 +41,7 @@ const testimonialSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Email is required']
   },
-  featured: {
-    type: Boolean,
-    default: false
-  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

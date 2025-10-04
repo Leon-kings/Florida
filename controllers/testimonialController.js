@@ -11,61 +11,86 @@ const {
 // @access  Private
 exports.createTestimonial = async (req, res) => {
   try {
-    const { name, role, content, rating, email, image } = req.body;
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    console.log('Request user:', req.user);
 
-    let imageData = {};
-    
-    // Check if image was uploaded via file or provided as URL
+    const { name, role, content, rating, email } = req.body;
+
+    // Validate required fields
+    if (!name || !content || !email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Name, content, and email are required fields'
+      });
+    }
+
+    // Handle image - make it optional for now
+    let imageData = {
+      public_id: 'default',
+      url: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+    };
+
     if (req.file) {
-      // File upload
       imageData = {
         public_id: req.file.filename,
         url: req.file.path
       };
-    } else if (image) {
-      // URL provided (from frontend)
-      imageData = {
-        public_id: null, // or generate a custom ID
-        url: image
-      };
-    } else {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Image is required'
-      });
     }
 
-    // Create testimonial
+    // Make createdBy optional for testing
+    const createdBy = req.user?.id || 'anonymous';
+
+    // Create testimonial with error handling
     const testimonial = await Testimonial.create({
-      name,
-      role,
-      content,
-      rating: parseInt(rating),
-      email,
+      name: name.trim(),
+      role: role?.trim() || "Customer",
+      content: content.trim(),
+      rating: parseInt(rating) || 5,
+      email: email.trim(),
       image: imageData,
-      createdBy: req.user.id
+      createdBy: createdBy
     });
 
-    // Send confirmation email
-    await sendTestimonialConfirmation(testimonial);
+    console.log('Testimonial created successfully:', testimonial);
+
+    // Optional: Send confirmation email (wrap in try-catch)
+    try {
+      await sendTestimonialConfirmation(testimonial);
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError);
+      // Don't fail the request if email fails
+    }
 
     res.status(201).json({
       status: 'success',
-      message: 'Testimonial created successfully. Confirmation email sent.',
+      message: 'Testimonial created successfully',
       data: {
         testimonial
       }
     });
+
   } catch (error) {
-    // Delete uploaded image if testimonial creation fails
+    console.error('FULL ERROR creating testimonial:', error);
+    
+    // Delete uploaded image if creation fails
     if (req.file) {
-      await deleteImage(req.file.filename);
+      try {
+        await deleteImage(req.file.filename);
+      } catch (deleteError) {
+        console.error('Error deleting image:', deleteError);
+      }
     }
     
     res.status(500).json({
       status: 'error',
       message: 'Error creating testimonial',
-      error: error.message
+      error: error.message,
+      // Include more details for debugging
+      details: {
+        validationErrors: error.errors,
+        databaseError: error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError'
+      }
     });
   }
 };
