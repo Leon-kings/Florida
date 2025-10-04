@@ -11,6 +11,9 @@ const orderRoutes = require('./routes/orderRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const financialRoutes = require('./routes/financialRoutes');
+const productsRoutes = require('./routes/productsRoutes');
 
 const app = express();
 
@@ -34,6 +37,9 @@ app.use('/orders', orderRoutes);
 app.use('/messages', messageRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/subscriptions', subscriptionRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/financials', financialRoutes);
+app.use('/products', productsRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
