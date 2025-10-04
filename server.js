@@ -40,7 +40,7 @@ app.use('/subscriptions', subscriptionRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/financials', financialRoutes);
 app.use('/products', productsRoutes);
-
+  
 // Health check
 app.get("/health", (req, res) => {
   res.status(200).json({

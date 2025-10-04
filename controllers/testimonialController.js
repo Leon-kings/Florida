@@ -11,10 +11,24 @@ const {
 // @access  Private
 exports.createTestimonial = async (req, res) => {
   try {
-    const { name, role, content, rating, email } = req.body;
+    const { name, role, content, rating, email, image } = req.body;
 
-    // Check if image was uploaded
-    if (!req.file) {
+    let imageData = {};
+    
+    // Check if image was uploaded via file or provided as URL
+    if (req.file) {
+      // File upload
+      imageData = {
+        public_id: req.file.filename,
+        url: req.file.path
+      };
+    } else if (image) {
+      // URL provided (from frontend)
+      imageData = {
+        public_id: null, // or generate a custom ID
+        url: image
+      };
+    } else {
       return res.status(400).json({
         status: 'error',
         message: 'Image is required'
@@ -28,10 +42,7 @@ exports.createTestimonial = async (req, res) => {
       content,
       rating: parseInt(rating),
       email,
-      image: {
-        public_id: req.file.filename,
-        url: req.file.path
-      },
+      image: imageData,
       createdBy: req.user.id
     });
 
