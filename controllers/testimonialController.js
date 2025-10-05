@@ -1,7 +1,7 @@
 const Testimonial = require('../models/Testimonial');
-const { deleteImage } = require('../cloudinary/cloudinary');
+const { deleteImage,cloudinary } = require('../cloudinary/cloudinary');
 const { 
-  sendTestimonialConfirmation, 
+ 
   sendTestimonialApproval, 
   sendTestimonialRejection 
 } = require('../mails/sendEmail');
@@ -11,86 +11,61 @@ const {
 // @access  Private
 exports.createTestimonial = async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
-    console.log('Request user:', req.user);
+    const { name, role, content, rating, email, image } = req.body;
 
-    const { name, role, content, rating, email } = req.body;
-
-    // Validate required fields
-    if (!name || !content || !email) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Name, content, and email are required fields'
-      });
-    }
-
-    // Handle image - make it optional for now
-    let imageData = {
-      public_id: 'default',
-      url: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-    };
-
+    let imageData = {};
+    
+    // Check if image was uploaded via file or provided as URL
     if (req.file) {
+      // File upload
       imageData = {
         public_id: req.file.filename,
         url: req.file.path
       };
+    } else if (image) {
+      // URL provided (from frontend)
+      imageData = {
+        public_id: null, // or generate a custom ID
+        url: image
+      };
+    } else {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Image is required'
+      });
     }
 
-    // Make createdBy optional for testing
-    const createdBy = req.user?.id || 'anonymous';
-
-    // Create testimonial with error handling
+    // Create testimonial
     const testimonial = await Testimonial.create({
-      name: name.trim(),
-      role: role?.trim() || "Customer",
-      content: content.trim(),
-      rating: parseInt(rating) || 5,
-      email: email.trim(),
+      name,
+      role,
+      content,
+      rating: parseInt(rating),
+      email,
       image: imageData,
-      createdBy: createdBy
+      createdBy: req.user.id
     });
 
-    console.log('Testimonial created successfully:', testimonial);
-
-    // Optional: Send confirmation email (wrap in try-catch)
-    try {
-      await sendTestimonialConfirmation(testimonial);
-    } catch (emailError) {
-      console.error('Email sending failed:', emailError);
-      // Don't fail the request if email fails
-    }
+    // Send confirmation email
+    await sendTestimonialConfirmation(testimonial);
 
     res.status(201).json({
       status: 'success',
-      message: 'Testimonial created successfully',
+      message: 'Testimonial created successfully. Confirmation email sent.',
       data: {
         testimonial
       }
     });
-
   } catch (error) {
-    console.error('FULL ERROR creating testimonial:', error);
-    
-    // Delete uploaded image if creation fails
+    // Delete uploaded image if testimonial creation fails
     if (req.file) {
-      try {
-        await deleteImage(req.file.filename);
-      } catch (deleteError) {
-        console.error('Error deleting image:', deleteError);
-      }
+      await deleteImage(req.file.filename);
     }
     
     res.status(500).json({
       status: 'error',
       message: 'Error creating testimonial',
-      error: error.message,
-      // Include more details for debugging
-      details: {
-        validationErrors: error.errors,
-        databaseError: error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError'
-      }
+      error: error.message
     });
   }
 };

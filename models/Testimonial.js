@@ -1,60 +1,41 @@
 const mongoose = require('mongoose');
 
+// In your Testimonial model
 const testimonialSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
+    required: true,
     trim: true
   },
   role: {
     type: String,
-    required: [true, 'Role is required'],
-    trim: true
+    default: "Customer"
   },
   content: {
     type: String,
-    required: [true, 'Content is required'],
-    trim: true
+    required: true
   },
   rating: {
     type: Number,
-    required: [true, 'Rating is required'],
-    min: [1, 'Rating must be at least 1'],
-    max: [5, 'Rating cannot exceed 5']
-  },
-  image: {
-    public_id: {
-      type: String,
-      required: true
-    },
-    url: {
-      type: String,
-      required: true
-    }
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    min: 1,
+    max: 5,
+    default: 5
   },
   email: {
     type: String,
-    required: [true, 'Email is required']
+    required: true
   },
-
+  image: {
+    public_id: String,
+    url: String
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+    required: false // Make this optional
   }
+}, {
+  timestamps: true
 });
 
 // Update updatedAt before saving
