@@ -26,7 +26,7 @@ router.get('/:id', getTestimonial);
 // router.use(protect);
 
 router.get('/my/testimonials', getMyTestimonials);
-router.post('/', upload.single('image'), createTestimonial);
+router.post('/create', upload.single('image'), createTestimonial);
 router.put('/:id', upload.single('image'), updateTestimonial);
 router.delete('/:id', deleteTestimonial);
 
